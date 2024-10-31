@@ -1,21 +1,31 @@
 import * as path from 'path';
 
 import { Dirent, Stats, readdir } from 'fs';
-import { stat } from 'node:fs/promises';
+import { stat, } from 'node:fs/promises';
 
 const directoryPath = "/var/home/goneri/git_repos/cloud-init-bsd-testing/";
 const collectionsPath = directoryPath + "collections/ansible_collections/";
 
 
-function collectionCallback(error, dirents: Dirent[]) {
-    const collectionDirectories = dirents
-        .filter((dirent) => dirent.isDirectory())
-        .map((dirent) => {const manifestFile = path.join(dirent.parentPath, dirent.name, "MANIFEST.json"); return {dirent, manifestFile}})
-        .map(({dirent, manifestFile}) =>{console.log(dirent); stat(manifestFile)});
-}
-
 function namespaceCallback(err, dirents: Dirent[]) {
-    dirents.filter((dirent) => dirent.isDirectory()).map((dirent) => path.join(dirent.parentPath, dirent.name)).map((namespaceDirectory) => { readdir(namespaceDirectory, {withFileTypes: true}, collectionCallback) });
+    dirents
+        .filter((dirent) => dirent.isDirectory())
+        .map((dirent) => {
+            const namespaceName = dirent.name;
+            const namespaceDirectory = path.join(dirent.parentPath, namespaceName);
+            let collectionCallback = (error, dirents: Dirent[]) => {
+                dirents
+                    .filter((dirent) => dirent.isDirectory())
+                    .map((dirent) => {const manifestFile = path.join(dirent.parentPath, dirent.name, "MANIFEST.json"); return {dirent, manifestFile}})
+                    .map(({dirent, manifestFile}) =>{console.log(`${namespaceName}.${dirent.name}`);});
+            }
+
+
+
+            readdir(namespaceDirectory, {withFileTypes: true}, collectionCallback);
+
+
+        });
 }
 
 
